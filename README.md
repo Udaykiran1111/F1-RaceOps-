@@ -1,81 +1,157 @@
 # F1 RaceOps
-**Race Strategy Intelligence & Live Decision Support Platform**  
-Course: CSE494 — Intelligent NoSQL Databases
 
-## What this is
-F1 RaceOps is an executable, individual-project demonstration of a MongoDB-backed race operations system. A Python simulator emits synthetic telemetry events continuously; PyMongo writes events to MongoDB; aggregation pipelines compute driver pace, tyre-compound summaries, pit-stop analysis, incident counts, and strategy action distributions; a Streamlit dashboard displays the current stored state.
+**Race Operations, Synthetic Telemetry & Strategy Analytics**  
+Course project: CSE494 — Intelligent NoSQL Databases
 
-**Data integrity:** all generated race telemetry is explicitly labelled synthetic/simulated. This is not official live F1 telemetry and is not a validated professional strategy model.
+> **Data notice:** This project generates synthetic demonstration telemetry and event records. It is not connected to official live Formula 1 telemetry. Strategy outputs are rule-based and illustrative, not professional race-engineering advice.
 
-## Requirements mapped to the assignment
-- MongoDB document model: races, drivers, telemetry, pit_stops, incidents, strategy_decisions.
-- MongoDB JSON Schema validators on core collections.
-- CRUD: `raceops/crud.py` and `scripts/demo_crud.py`.
-- PyMongo integration throughout the application.
-- Aggregation: `$match`, `$group`, `$avg`, `$max`, `$sort`, `$lookup`, `$unwind`, `$addFields`.
-- Continuous ingestion: `scripts/run_simulator.py`.
-- Dashboard: `streamlit run app.py`.
-- Optional MongoDB Change Streams: `python scripts/watch_changes.py` (requires replica set / Atlas).
-- Tests: `pytest -q`.
+## Features
 
-## Setup (Windows PowerShell)
-1. Install Python 3.10+ and MongoDB Community Server, or create a MongoDB Atlas database.
-2. Open a terminal in this project folder.
-3. Create environment and install dependencies:
-   ```powershell
-   py -m venv .venv
-   .\.venv\Scripts\Activate.ps1
-   pip install -r requirements.txt
-   Copy-Item .env.example .env
-   ```
-4. Edit `.env` if your MongoDB URI differs from the local default.
-5. Start MongoDB Community Server if using local MongoDB.
-6. Initialize schema, indexes, and seed data:
-   ```powershell
-   python scripts/setup_database.py
-   ```
-7. Run CRUD demonstration:
-   ```powershell
-   python scripts/demo_crud.py
-   ```
-8. Run aggregation outputs:
-   ```powershell
-   python scripts/run_aggregations.py
-   ```
-9. Start continuous telemetry in terminal 1:
-   ```powershell
-   python scripts/run_simulator.py --interval 1
-   ```
-10. Start dashboard in terminal 2:
-   ```powershell
-   streamlit run app.py
-   ```
-Stop the simulator with Ctrl+C.
+- Create races and update race status.
+- Register and manage driver records.
+- Generate timestamped synthetic telemetry for a selected race and driver.
+- Record pit stops and incidents.
+- Store documents in MongoDB through PyMongo.
+- Apply MongoDB JSON Schema validators and indexes.
+- Run aggregation pipelines for driver pace, tyre compound performance, pit-stop summaries, incident summaries, and strategy-action counts.
+- Display summaries and charts in Streamlit.
+- Run automated strategy and telemetry-validation tests.
 
-## Dataset
-The seeder creates a reproducible synthetic 2026 demo race, 20 driver records, sample pit stops/incidents, and 1,200 synthetic telemetry documents by default. The simulator adds further events. Values are generated for demonstrating database operations and analytics, not for scientific conclusions about real drivers or teams.
+## Stack
 
-## Database design
-- `drivers`: relatively stable entities; one document per driver.
-- `races`: race-level metadata and status.
-- `telemetry`: append-oriented event documents, indexed by race/driver/time.
-- `pit_stops`: one document per stop.
-- `incidents`: one document per event.
-- `strategy_decisions`: auditable output of the rule-based decision engine.
+Python, MongoDB, PyMongo, Streamlit, Pandas/charting dependencies from `requirements.txt`, and pytest.
 
-Telemetry is kept separate rather than embedded in driver documents because event volume grows independently and event history needs time-ordered queries. Stable driver identity is referenced by `driver_id`. This avoids unbounded arrays inside a single document.
+## Project structure
 
-## Aggregations
-1. Driver pace: average lap time and speed, maximum tyre age, grouped by driver.
-2. Compound comparison: average lap time, average tyre age and tyre temperature grouped by compound.
-3. Pit-stop analysis: `$lookup` drivers to assign team, then average stop time and position delta by team.
-4. Incident analysis: group by incident type and severity.
-5. Strategy action distribution: count generated recommendations by action.
+```text
+F1_RaceOps/
+├── app.py
+├── raceops/
+│   ├── config.py
+│   ├── db.py
+│   ├── validation.py
+│   ├── simulator.py
+│   ├── strategy.py
+│   ├── aggregations.py
+│   └── crud.py
+├── scripts/
+│   ├── setup_database.py
+│   ├── demo_crud.py
+│   ├── run_aggregations.py
+│   └── run_simulator.py
+├── tests/
+│   ├── test_strategy.py
+│   └── test_validation.py
+├── report/
+├── requirements.txt
+├── .env.example
+├── .gitignore
+└── README.md
+```
 
-## Validation and failure handling
-MongoDB server-side validators reject missing required fields, invalid enums, invalid ranges, and incorrect BSON types in validated collections. Unique indexes protect driver and race identifiers. Database connection failures are surfaced by the scripts/dashboard; the simulator can be stopped with Ctrl+C. Change Streams require a replica set; standalone local MongoDB may not support them.
+Verify the exact filenames against your final repository before pushing.
 
-## Limitations and future improvements
-- Strategy logic is transparent rule-based logic, not a trained or FIA-approved model.
-- The simulator models only a subset of race dynamics and does not reproduce vehicle physics.
-- For a production-grade extension: ingest permitted public historical data, calibrate tyre degradation from sourced data, add event replay, use replica-set Change Streams, persist audit trails, add unit/integration tests against MongoDB, and compare strategy outcomes over multiple randomized race scenarios.
+## Requirements
+
+- Python 3.10 or newer (the tested local environment used Python 3.13.11).
+- A running MongoDB server, local or hosted.
+- Git, if uploading to GitHub.
+
+## Install on Windows
+
+```cmd
+cd /d D:\Downloads\F1_RaceOps
+python -m venv .venv
+.venv\Scripts\activate
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+Configure a local `.env` file using the variable names expected by `raceops/config.py`. The example below is only valid if the project reads these exact names:
+
+```dotenv
+MONGODB_URI=mongodb://localhost:27017/
+MONGODB_DB=f1_raceops
+```
+
+Check `raceops/config.py` before using the example. Do not commit `.env` or real credentials.
+
+Initialize the database:
+
+```cmd
+set PYTHONPATH=.
+python scripts\setup_database.py
+```
+
+## Run the Streamlit application
+
+With the virtual environment activated and MongoDB running:
+
+```cmd
+set PYTHONPATH=.
+python -m streamlit run app.py
+```
+
+Open the local URL printed by Streamlit, normally `http://localhost:8501`.
+
+## Demonstration workflow
+
+1. Open **Race Management** and create a race with a unique race ID.
+2. Open **Driver Management** and register a driver or select an existing driver.
+3. Open **Simulator & Events**, select a race and driver, and generate a small number of telemetry events.
+4. Open **Race Dashboard** and inspect counts, pace summaries, tyre compound analytics, latest telemetry, and strategy-action distribution.
+5. Record a pit stop and an incident.
+6. Use MongoDB Compass to inspect documents in `races`, `drivers`, `telemetry`, `pit_stops`, `incidents`, and `strategy_decisions`.
+
+## Run tests
+
+```cmd
+set PYTHONPATH=.
+python -m pytest -v
+```
+
+The documented local run returned **10 passed**: four strategy tests and six telemetry-validation tests. Run tests again after any code changes.
+
+## Useful scripts
+
+```cmd
+python scripts\demo_crud.py
+python scripts\run_aggregations.py
+python scripts\run_simulator.py --interval 1 --events 30
+```
+
+Set `PYTHONPATH=.` in the same Command Prompt session if package imports require it.
+
+## MongoDB collections
+
+| Collection | Purpose |
+|---|---|
+| `races` | Race metadata and status |
+| `drivers` | Driver identity and team details |
+| `telemetry` | Timestamped synthetic observations |
+| `pit_stops` | Pit-stop event records |
+| `incidents` | Incident event records |
+| `strategy_decisions` | Rule-based strategy recommendations |
+
+The telemetry collection has a unique index on `event_id`, plus indexes for race/driver/time queries and timestamp ordering.
+
+## GitHub safety
+
+Do not commit:
+- `.env` or database credentials
+- `.venv/`
+- `__pycache__/` or `.pytest_cache/`
+- database dumps, exports, or secrets
+
+Commit `.env.example` with placeholder values only. Review `git status` before every push.
+
+## Deployment
+
+The Streamlit interface can be hosted on Streamlit Community Cloud, but a hosted app cannot reach MongoDB running only on the developer's `localhost`. Deployment requires a reachable database such as MongoDB Atlas, correct network access rules, and credentials stored in the hosting platform's secrets manager. Configure the application to read deployed secrets securely and test the hosted workflow before claiming deployment is complete.
+
+## Limitations
+
+- Data is synthetic, not official live F1 telemetry.
+- Strategy recommendations are rule-based and illustrative.
+- Cloud deployment requires separate database and secrets configuration.
+- MongoDB cross-collection references are application-managed rather than relational foreign keys.
